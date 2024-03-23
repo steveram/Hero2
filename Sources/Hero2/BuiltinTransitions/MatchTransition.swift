@@ -13,6 +13,9 @@ import UIKit
 public protocol MatchTransitionDelegate {
     /// Provide the matched view from the current object's own view hierarchy for the match transition
     func matchedViewFor(transition: MatchTransition, otherViewController: UIViewController) -> UIView?
+    
+    func matchedTransitionPresentedSubviewsState(transition: MatchTransition)
+    func matchedTransitionDismissedSubviewsState(transition: MatchTransition)
 }
 
 public struct MatchTransitionOptions {
@@ -60,11 +63,11 @@ open class MatchTransition: Transition {
         guard let back = backgroundView, let front = foregroundView, let container = transitionContainer else {
             fatalError()
         }
-
-        let matchedDestinationView = foregroundViewController?.findObjectMatchType(MatchTransitionDelegate.self)?
-            .matchedViewFor(transition: self, otherViewController: backgroundViewController!)
-        let matchedSourceView = backgroundViewController?.findObjectMatchType(MatchTransitionDelegate.self)?
-            .matchedViewFor(transition: self, otherViewController: foregroundViewController!)
+ 
+        let foregroundDelegate = foregroundViewController?.findObjectMatchType(MatchTransitionDelegate.self)
+        let backgroundDelegate = backgroundViewController?.findObjectMatchType(MatchTransitionDelegate.self)
+        let matchedDestinationView = foregroundDelegate?.matchedViewFor(transition: self, otherViewController: backgroundViewController!)
+        let matchedSourceView = backgroundDelegate?.matchedViewFor(transition: self, otherViewController: foregroundViewController!)
 
         isMatched = matchedSourceView != nil
 
@@ -101,10 +104,15 @@ open class MatchTransition: Transition {
             matchedSourceView.superview?.insertSubview(sourceViewPlaceholder, aboveSubview: matchedSourceView)
             foregroundContainerView.contentView.addSubview(matchedSourceView)
         }
-
+        
+        let isPresenting = isPresenting
+        
         addDismissStateBlock {
             foregroundContainerView.cornerRadius = matchedSourceView?.cornerRadius ?? 0
             foregroundContainerView.frameWithoutTransform = dismissedFrame
+
+            foregroundDelegate?.matchedTransitionDismissedSubviewsState(transition: self)
+            backgroundDelegate?.matchedTransitionDismissedSubviewsState(transition: self)
 
             // UIKit Bug: If we add a shadowPath animation, when the UIViewPropertyAnimator pauses,
             // the animation will jump directly to the end. fractionCompleted value seem to be messed up.
@@ -135,6 +143,9 @@ open class MatchTransition: Transition {
         addPresentStateBlock {
             foregroundContainerView.cornerRadius = finalCornerRadius
             foregroundContainerView.frameWithoutTransform = container.bounds
+
+            foregroundDelegate?.matchedTransitionPresentedSubviewsState(transition: self)
+            backgroundDelegate?.matchedTransitionPresentedSubviewsState(transition: self)
 
             // UIKit Bug: If we add a shadowPath animation, when the UIViewPropertyAnimator pauses,
             // the animation will jump directly to the end. fractionCompleted value seem to be messed up.
