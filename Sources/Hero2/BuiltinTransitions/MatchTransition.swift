@@ -56,7 +56,7 @@ open class MatchTransition: Transition {
     }
 
     private let foregroundContainerView = MatchTransitionContainerView()
-    private var isMatched = false
+    public var isMatched = false
     private(set) open var isTransitioningVertically = false
 
     open override func animate() {
@@ -104,8 +104,6 @@ open class MatchTransition: Transition {
             matchedSourceView.superview?.insertSubview(sourceViewPlaceholder, aboveSubview: matchedSourceView)
             foregroundContainerView.contentView.addSubview(matchedSourceView)
         }
-        
-        let isPresenting = isPresenting
         
         addDismissStateBlock {
             foregroundContainerView.cornerRadius = matchedSourceView?.cornerRadius ?? 0
@@ -293,3 +291,4 @@ private class MatchTransitionContainerView: UIView {
         shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius)
     }
 }
+
